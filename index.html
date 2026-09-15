@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COMMIT SHAME ARCADE — ghostwriter-of-shame</title>
+<title>COMMIT SHAME ARCADE - ghostwriter-of-shame</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -410,11 +410,19 @@
   function normalize(msg){ return msg.trim().toLowerCase(); }
 
   function isGibberish(raw){
-    var letters = raw.replace(/[^a-zA-Z]/g, '').toLowerCase();
-    if (letters.length < 4) return false;
-    var vowels = (letters.match(/[aeiou]/g) || []).length;
+    var trimmed = raw.trim();
+    if (/[^\x00-\x7F]/.test(trimmed)) return false; // non-Latin text: vowel heuristic doesn't apply, don't flag
+    if (trimmed.indexOf(' ') !== -1) return false; // multi-word messages are very unlikely to be pure keysmash
+
+    var letters = trimmed.replace(/[^a-zA-Z]/g, '').toLowerCase();
+    if (letters.length < 6) return false; // too short to judge reliably
+
+    var uniqueChars = new Set(letters.split(''));
+    if (uniqueChars.size <= 2) return true; // e.g. "aaaaaaaa" or "ababab"
+
+    var vowels = (letters.match(/[aeiouy]/g) || []).length;
     var ratio = vowels / letters.length;
-    return ratio < 0.15;
+    return ratio < 0.12;
   }
 
   function analyze(messages, timestamps){
@@ -427,11 +435,11 @@
     };
     if (n === 0) return result;
 
-    var seen = {};
+    var seen = new Set();
     messages.forEach(function(raw, i){
       var m = normalize(raw);
-      if (seen[m]) result.duplicates++;
-      seen[m] = true;
+      if (seen.has(m)) result.duplicates++;
+      seen.add(m);
 
       if (m.length <= 5) result.veryShort++;
       if (m.length >= 90) result.veryLong++;
@@ -511,10 +519,14 @@
     return { text: 'GAME OVER', cls: 'low' };
   }
 
+  var countUpRunId = 0;
+
   function countUp(target, final){
+    var myRun = ++countUpRunId;
     var duration = 700;
     var startTime = null;
     function step(ts){
+      if (myRun !== countUpRunId) return; // a newer run superseded this one, stop
       if (!startTime) startTime = ts;
       var progress = Math.min(1, (ts - startTime) / duration);
       var val = Math.round(progress * final);
