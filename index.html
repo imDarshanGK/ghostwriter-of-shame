@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COMMIT SHAME ARCADE - ghostwriter-of-shame</title>
+<title>COMMIT SHAME ARCADE — ghostwriter-of-shame</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -409,13 +409,21 @@
 
   function normalize(msg){ return msg.trim().toLowerCase(); }
 
+  function isGibberish(raw){
+    var letters = raw.replace(/[^a-zA-Z]/g, '').toLowerCase();
+    if (letters.length < 4) return false;
+    var vowels = (letters.match(/[aeiou]/g) || []).length;
+    var ratio = vowels / letters.length;
+    return ratio < 0.15;
+  }
+
   function analyze(messages, timestamps){
     messages = messages.filter(function(m){ return m && m.trim().length; });
     var n = messages.length;
     var result = {
       total: n, generic: 0, apology: 0, frustration: 0, finality: 0,
-      duplicates: 0, veryShort: 0, veryLong: 0, lateNight: 0,
-      exampleGeneric: null, exampleFinality: null
+      duplicates: 0, veryShort: 0, veryLong: 0, lateNight: 0, gibberish: 0,
+      exampleGeneric: null, exampleFinality: null, exampleGibberish: null
     };
     if (n === 0) return result;
 
@@ -427,6 +435,11 @@
 
       if (m.length <= 5) result.veryShort++;
       if (m.length >= 90) result.veryLong++;
+
+      if (isGibberish(raw)) {
+        result.gibberish++;
+        if (!result.exampleGibberish) result.exampleGibberish = raw.trim();
+      }
 
       GENERIC_WORDS.forEach(function(w){
         if (m === w || m.indexOf(w) === 0) {
@@ -471,8 +484,13 @@
     ded('APOLOGY COMMIT', a.apology + ' occurrence' + (a.apology === 1 ? '' : 's'), Math.min(8, a.apology * 3));
     ded('VISIBLE FRUSTRATION', a.frustration + ' occurrence' + (a.frustration === 1 ? '' : 's'), Math.min(8, a.frustration * 2));
     ded('LATE NIGHT COMMIT', a.lateNight + ' commit' + (a.lateNight === 1 ? '' : 's') + ' between 11pm–5am', Math.min(12, a.lateNight * 2));
+    ded('KEYSMASH DETECTED', a.gibberish + ' message' + (a.gibberish === 1 ? '' : 's') + ' that don\u2019t read as real words (e.g. "' + (a.exampleGibberish || '') + '")', Math.min(40, a.gibberish * 25));
 
     score = Math.max(3, Math.min(98, Math.round(score)));
+
+    if (a.gibberish > 0) {
+      score = Math.min(score, 35);
+    }
 
     if (combos.length === 0) {
       combos.push({ name: 'CLEAN RUN', detail: 'no penalties detected — suspicious, honestly', pts: 0 });
