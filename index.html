@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COMMIT SHAME ARCADE - ghostwriter-of-shame</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void-a: #0d0221;
+    --void-b: #1a0933;
+    --panel: #150a2e;
+    --magenta: #ff2e9a;
+    --cyan: #00f0ff;
+    --gold: #ffe93a;
+    --dim: #7a5c9e;
+    --pixel: 'Press Start 2P', monospace;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background: linear-gradient(180deg, var(--void-a) 0%, var(--void-b) 55%, #0a0118 100%);
+    font-family: var(--mono);
+    color: #e8def0;
+    padding: 36px 14px 90px;
+    display:flex;
+    justify-content:center;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  .floor{
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 40vh;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255,46,154,0.28) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,46,154,0.28) 1px, transparent 1px);
+    background-size: 48px 48px;
+    transform: perspective(300px) rotateX(62deg);
+    transform-origin: bottom;
+    opacity: 0.35;
+    animation: drift 6s linear infinite;
+    z-index: 0;
+  }
+  @keyframes drift{
+    from{ background-position: 0 0, 0 0; }
+    to{ background-position: 0 48px, 0 0; }
+  }
+  .scanlines{
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.22) 3px);
+    z-index: 3;
+  }
+
+  .cabinet{
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 620px;
+  }
+
+  .marquee{
+    text-align: center;
+    margin-bottom: 26px;
+  }
+  .marquee h1{
+    font-family: var(--pixel);
+    font-size: 20px;
+    line-height: 1.6;
+    color: var(--magenta);
+    text-shadow: 0 0 6px rgba(255,46,154,0.65), 0 0 18px rgba(255,46,154,0.35);
+    margin: 0 0 10px;
+    letter-spacing: 1px;
+  }
+  .marquee .sub{
+    font-family: var(--pixel);
+    font-size: 9px;
+    color: var(--cyan);
+    text-shadow: 0 0 6px rgba(0,240,255,0.5);
+    animation: flicker 1.6s steps(1) infinite;
+  }
+  @keyframes flicker{
+    0%, 60%{ opacity: 1; }
+    61%, 100%{ opacity: 0.25; }
+  }
+
+  .screen{
+    background: var(--panel);
+    border: 3px solid var(--magenta);
+    box-shadow: 0 0 0 1px rgba(255,46,154,0.25), 0 0 24px rgba(255,46,154,0.18), inset 0 0 30px rgba(0,0,0,0.5);
+    padding: 26px 22px;
+    position: relative;
+  }
+  .bolt{
+    position: absolute;
+    width: 8px; height: 8px;
+    background: var(--dim);
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4);
+  }
+  .bolt.tl{ top: 8px; left: 8px; }
+  .bolt.tr{ top: 8px; right: 8px; }
+  .bolt.bl{ bottom: 8px; left: 8px; }
+  .bolt.br{ bottom: 8px; right: 8px; }
+
+  .label{
+    font-family: var(--pixel);
+    font-size: 10px;
+    color: var(--dim);
+    margin-bottom: 12px;
+  }
+  .label .on{ color: var(--cyan); }
+
+  .tabs{
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .tab{
+    font-family: var(--pixel);
+    font-size: 9px;
+    background: transparent;
+    border: 2px solid var(--dim);
+    color: var(--dim);
+    padding: 10px 10px;
+    cursor: pointer;
+    flex: 1;
+    text-align: center;
+  }
+  .tab.active{
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 8px rgba(0,240,255,0.35);
+  }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  textarea{
+    width: 100%;
+    min-height: 110px;
+    font-family: var(--mono);
+    font-size: 13px;
+    background: #0a0118;
+    border: 2px solid var(--dim);
+    color: #e8def0;
+    padding: 12px;
+    resize: vertical;
+  }
+  textarea::placeholder{ color: var(--dim); }
+  textarea:focus{ outline:none; border-color: var(--cyan); }
+
+  input[type="text"]{
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 13px;
+    background: #0a0118;
+    border: 2px solid var(--dim);
+    color: #e8def0;
+    padding: 11px 12px;
+  }
+  input[type="text"]::placeholder{ color: var(--dim); }
+  input[type="text"]:focus{ outline:none; border-color: var(--cyan); }
+
+  .hint{
+    font-size: 11px;
+    color: var(--dim);
+    margin-top: 8px;
+  }
+
+  .start-btn{
+    display:block;
+    width: 100%;
+    font-family: var(--pixel);
+    font-size: 13px;
+    background: var(--magenta);
+    color: #0a0118;
+    border: none;
+    padding: 16px;
+    margin-top: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #a11360, 0 0 18px rgba(255,46,154,0.4);
+    letter-spacing: 1px;
+  }
+  .start-btn:active{ transform: translateY(3px); box-shadow: 0 1px 0 #a11360; }
+  .start-btn:disabled{ opacity: 0.4; cursor: default; box-shadow: none; }
+
+  .status{
+    font-size: 11.5px;
+    color: var(--dim);
+    margin-top: 10px;
+    min-height: 14px;
+  }
+  .status.err{ color: var(--magenta); }
+
+  .result{
+    display:none;
+    margin-top: 22px;
+    text-align: center;
+  }
+  .result.show{ display:block; }
+
+  .result-tag{
+    font-family: var(--pixel);
+    font-size: 10px;
+    color: var(--dim);
+    margin-bottom: 6px;
+  }
+  .score-num{
+    font-family: var(--pixel);
+    font-size: 44px;
+    color: var(--gold);
+    text-shadow: 0 0 10px rgba(255,233,58,0.6);
+    margin-bottom: 6px;
+  }
+  .score-den{
+    font-family: var(--pixel);
+    font-size: 12px;
+    color: var(--dim);
+    margin-bottom: 18px;
+  }
+
+  .badge{
+    display: inline-block;
+    font-family: var(--pixel);
+    font-size: 11px;
+    padding: 10px 16px;
+    border: 2px solid var(--cyan);
+    color: var(--cyan);
+    margin-bottom: 22px;
+  }
+  .badge.high{ border-color: var(--gold); color: var(--gold); }
+  .badge.low{ border-color: var(--magenta); color: var(--magenta); }
+
+  .combos{
+    text-align: left;
+    margin-top: 4px;
+  }
+  .combo{
+    display:flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12.5px;
+    padding: 9px 0;
+    border-bottom: 1px dashed rgba(122,92,158,0.4);
+    opacity: 0;
+    transform: translateY(6px);
+    animation: rise 0.35s ease forwards;
+  }
+  .combo .name{ color: #e8def0; }
+  .combo .detail{ color: var(--dim); font-size: 11px; display:block; margin-top: 2px; }
+  .combo .pts{
+    font-family: var(--pixel);
+    font-size: 10px;
+    color: var(--magenta);
+    white-space: nowrap;
+  }
+  .combo .pts.zero{ color: var(--cyan); }
+  @keyframes rise{
+    to{ opacity: 1; transform: translateY(0); }
+  }
+
+  .closing{
+    margin-top: 16px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #c9b8de;
+    text-align: left;
+  }
+
+  .copy-row{
+    margin-top: 20px;
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    justify-content: center;
+  }
+  .copy-btn{
+    font-family: var(--pixel);
+    font-size: 9px;
+    background: transparent;
+    border: 2px solid var(--dim);
+    color: var(--dim);
+    padding: 9px 12px;
+    cursor: pointer;
+  }
+  .copy-btn:hover{ border-color: var(--cyan); color: var(--cyan); }
+  .copied{
+    font-size: 11px;
+    color: var(--dim);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .copied.show{ opacity: 1; }
+
+  .footer{
+    margin-top: 26px;
+    font-size: 10.5px;
+    color: var(--dim);
+    text-align: center;
+  }
+
+  @media (max-width: 480px){
+    .marquee h1{ font-size: 15px; }
+    .score-num{ font-size: 34px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="floor"></div>
+<div class="scanlines"></div>
+
+<div class="cabinet">
+  <div class="marquee">
+    <h1>COMMIT SHAME<br>ARCADE</h1>
+    <div class="sub">INSERT COMMITS TO CONTINUE</div>
+  </div>
+
+  <div class="screen">
+    <span class="bolt tl"></span><span class="bolt tr"></span><span class="bolt bl"></span><span class="bolt br"></span>
+
+    <div class="label">PLAYER INPUT: <span class="on" id="modeLabel">PASTE</span></div>
+
+    <div class="tabs">
+      <button class="tab active" data-mode="paste">PASTE COMMITS</button>
+      <button class="tab" data-mode="repo">GITHUB REPO</button>
+    </div>
+
+    <div class="panel active" id="panel-paste">
+      <textarea id="pasteInput" placeholder="fix bug&#10;wip&#10;asdf&#10;actually fix the fix&#10;final final version&#10;(one commit per line)"></textarea>
+      <div class="hint">Nothing leaves this tab.</div>
+    </div>
+
+    <div class="panel" id="panel-repo">
+      <input id="repoInput" type="text" placeholder="owner/repo — e.g. torvalds/linux">
+      <div class="hint">Fetched live from the public GitHub API, client-side only.</div>
+    </div>
+
+    <button class="start-btn" id="startBtn">▶ PRESS START</button>
+    <div class="status" id="status"></div>
+
+    <div class="result" id="result">
+      <div class="result-tag">FINAL SCORE</div>
+      <div class="score-num" id="scoreNum">000</div>
+      <div class="score-den">/ 100</div>
+      <div class="badge" id="badge">—</div>
+
+      <div class="combos" id="combos"></div>
+      <div class="closing" id="closing"></div>
+
+      <div class="copy-row">
+        <button class="copy-btn" id="copyBtn">COPY RESULTS</button>
+        <span class="copied" id="copiedMsg">copied.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">no data sent to any server we run · github fetches go browser → api.github.com directly</div>
+</div>
+
+<script>
+(function(){
+  var el = {
+    tabs: document.querySelectorAll('.tab'),
+    modeLabel: document.getElementById('modeLabel'),
+    panelPaste: document.getElementById('panel-paste'),
+    panelRepo: document.getElementById('panel-repo'),
+    pasteInput: document.getElementById('pasteInput'),
+    repoInput: document.getElementById('repoInput'),
+    startBtn: document.getElementById('startBtn'),
+    status: document.getElementById('status'),
+    result: document.getElementById('result'),
+    scoreNum: document.getElementById('scoreNum'),
+    badge: document.getElementById('badge'),
+    combos: document.getElementById('combos'),
+    closing: document.getElementById('closing'),
+    copyBtn: document.getElementById('copyBtn'),
+    copiedMsg: document.getElementById('copiedMsg')
+  };
+
+  var mode = 'paste';
+  var lastText = '';
+
+  el.tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      mode = btn.getAttribute('data-mode');
+      el.tabs.forEach(function(b){ b.classList.toggle('active', b === btn); });
+      el.panelPaste.classList.toggle('active', mode === 'paste');
+      el.panelRepo.classList.toggle('active', mode === 'repo');
+      el.modeLabel.textContent = mode === 'paste' ? 'PASTE' : 'GITHUB';
+      el.status.textContent = '';
+      el.status.classList.remove('err');
+    });
+  });
+
+  var GENERIC_WORDS = ['fix','update','wip','stuff','misc','changes','minor','cleanup','fixes','temp','test','asdf','idk','working','fix bug','bugfix','commit','save','checkpoint'];
+  var APOLOGY_WORDS = ['sorry','oops','my bad','revert','undo','whoops'];
+  var FRUSTRATION_WORDS = ['ugh','why','argh','finally','seriously','please','omg','fml'];
+  var FINALITY_WORDS = ['final','final final','actually final','really final','last one','done for real','fr this time'];
+
+  function normalize(msg){ return msg.trim().toLowerCase(); }
+
+  function analyze(messages, timestamps){
+    messages = messages.filter(function(m){ return m && m.trim().length; });
+    var n = messages.length;
+    var result = {
+      total: n, generic: 0, apology: 0, frustration: 0, finality: 0,
+      duplicates: 0, veryShort: 0, veryLong: 0, lateNight: 0,
+      exampleGeneric: null, exampleFinality: null
+    };
+    if (n === 0) return result;
+
+    var seen = {};
+    messages.forEach(function(raw, i){
+      var m = normalize(raw);
+      if (seen[m]) result.duplicates++;
+      seen[m] = true;
+
+      if (m.length <= 5) result.veryShort++;
+      if (m.length >= 90) result.veryLong++;
+
+      GENERIC_WORDS.forEach(function(w){
+        if (m === w || m.indexOf(w) === 0) {
+          result.generic++;
+          if (!result.exampleGeneric) result.exampleGeneric = raw.trim();
+        }
+      });
+      APOLOGY_WORDS.forEach(function(w){ if (m.indexOf(w) !== -1) result.apology++; });
+      FRUSTRATION_WORDS.forEach(function(w){ if (m.indexOf(w) !== -1) result.frustration++; });
+      FINALITY_WORDS.forEach(function(w){
+        if (m.indexOf(w) !== -1) {
+          result.finality++;
+          if (!result.exampleFinality) result.exampleFinality = raw.trim();
+        }
+      });
+
+      if (timestamps && timestamps[i]) {
+        var hr = new Date(timestamps[i]).getHours();
+        if (hr >= 23 || hr < 5) result.lateNight++;
+      }
+    });
+
+    return result;
+  }
+
+  function pct(part, total){ return total ? Math.round((part / total) * 100) : 0; }
+
+  function evaluate(a){
+    var score = 100;
+    var combos = [];
+    function ded(name, detail, amount){
+      if (amount > 0) {
+        combos.push({ name: name, detail: detail, pts: -amount });
+        score -= amount;
+      }
+    }
+    ded('GENERIC COMMIT', pct(a.generic, a.total) + '% generic phrasing (e.g. "' + (a.exampleGeneric || 'fix') + '")', Math.min(30, a.generic * 4));
+    ded('DUPLICATE MESSAGE', a.duplicates + ' repeat' + (a.duplicates === 1 ? '' : 's'), Math.min(15, a.duplicates * 5));
+    ded('TOO SHORT', a.veryShort + ' message' + (a.veryShort === 1 ? '' : 's') + ' under 5 characters', Math.min(15, a.veryShort * 3));
+    ded('WALL OF TEXT', a.veryLong + ' message' + (a.veryLong === 1 ? '' : 's') + ' over 90 characters', Math.min(10, a.veryLong * 4));
+    ded('"FINAL FINAL" SYNDROME', a.finality + ' hit' + (a.finality === 1 ? '' : 's') + ' (e.g. "' + (a.exampleFinality || 'final') + '")', Math.min(10, a.finality * 5));
+    ded('APOLOGY COMMIT', a.apology + ' occurrence' + (a.apology === 1 ? '' : 's'), Math.min(8, a.apology * 3));
+    ded('VISIBLE FRUSTRATION', a.frustration + ' occurrence' + (a.frustration === 1 ? '' : 's'), Math.min(8, a.frustration * 2));
+    ded('LATE NIGHT COMMIT', a.lateNight + ' commit' + (a.lateNight === 1 ? '' : 's') + ' between 11pm–5am', Math.min(12, a.lateNight * 2));
+
+    score = Math.max(3, Math.min(98, Math.round(score)));
+
+    if (combos.length === 0) {
+      combos.push({ name: 'CLEAN RUN', detail: 'no penalties detected — suspicious, honestly', pts: 0 });
+    }
+
+    return { score: score, combos: combos };
+  }
+
+  function closingLine(score){
+    if (score >= 75) return 'On balance, a developer who occasionally remembers that other humans will read this log. Cautiously impressed.';
+    if (score >= 45) return 'The record of someone who means well under deadline pressure. Seen worse. Seen better.';
+    return 'This log will explain nothing to anyone who wasn\u2019t already there. Recommend a stricter commit habit next run.';
+  }
+
+  function badgeInfo(score){
+    if (score >= 70) return { text: 'HIGH SCORE', cls: 'high' };
+    if (score >= 40) return { text: 'CONTINUE?', cls: '' };
+    return { text: 'GAME OVER', cls: 'low' };
+  }
+
+  function countUp(target, final){
+    var duration = 700;
+    var startTime = null;
+    function step(ts){
+      if (!startTime) startTime = ts;
+      var progress = Math.min(1, (ts - startTime) / duration);
+      var val = Math.round(progress * final);
+      target.textContent = String(val).padStart(3, '0');
+      if (progress < 1) requestAnimationFrame(step);
+      else target.textContent = String(final).padStart(3, '0');
+    }
+    requestAnimationFrame(step);
+  }
+
+  function renderResult(a, sourceLabel){
+    if (a.total === 0) {
+      el.status.textContent = 'ERROR: no commit messages found';
+      el.status.classList.add('err');
+      el.result.classList.remove('show');
+      return;
+    }
+    var ev = evaluate(a);
+    var badge = badgeInfo(ev.score);
+
+    el.result.classList.add('show');
+    countUp(el.scoreNum, ev.score);
+
+    el.badge.textContent = badge.text;
+    el.badge.className = 'badge' + (badge.cls ? ' ' + badge.cls : '');
+
+    el.combos.innerHTML = '';
+    ev.combos.forEach(function(c, i){
+      var row = document.createElement('div');
+      row.className = 'combo';
+      row.style.animationDelay = (i * 0.08) + 's';
+      row.innerHTML =
+        '<span class="name">' + c.name + '<span class="detail">' + c.detail + '</span></span>' +
+        '<span class="pts' + (c.pts === 0 ? ' zero' : '') + '">' + (c.pts === 0 ? '+0' : c.pts) + '</span>';
+      el.combos.appendChild(row);
+    });
+
+    var closing = closingLine(ev.score);
+    el.closing.textContent = closing;
+
+    lastText =
+      'COMMIT SHAME ARCADE — RESULTS\n' +
+      'source: ' + (sourceLabel || 'pasted commits') + '\n\n' +
+      'FINAL SCORE: ' + ev.score + '/100 — ' + badge.text + '\n\n' +
+      ev.combos.map(function(c){ return c.name + ' (' + (c.pts === 0 ? '+0' : c.pts) + '): ' + c.detail; }).join('\n') +
+      '\n\n' + closing;
+  }
+
+  function runPaste(){
+    var lines = el.pasteInput.value.split('\n');
+    var a = analyze(lines, null);
+    renderResult(a, null);
+    el.status.textContent = '';
+    el.status.classList.remove('err');
+  }
+
+  function runRepo(){
+    var raw = el.repoInput.value.trim();
+    if (!raw || raw.indexOf('/') === -1) {
+      el.status.textContent = 'ERROR: enter a repo as owner/repo';
+      el.status.classList.add('err');
+      return;
+    }
+    var parts = raw.replace(/^https?:\/\/github\.com\//i, '').split('/');
+    var owner = parts[0], repo = (parts[1] || '').replace(/\.git$/, '');
+    if (!owner || !repo) {
+      el.status.textContent = 'ERROR: could not parse owner/repo';
+      el.status.classList.add('err');
+      return;
+    }
+
+    el.status.textContent = 'FETCHING FROM api.github.com ...';
+    el.status.classList.remove('err');
+    el.startBtn.disabled = true;
+
+    fetch('https://api.github.com/repos/' + owner + '/' + repo + '/commits?per_page=40')
+      .then(function(res){
+        if (!res.ok) {
+          if (res.status === 404) throw new Error('ERROR: repo not found or private');
+          if (res.status === 403) throw new Error('ERROR: rate limit hit, try again shortly');
+          throw new Error('ERROR: github api status ' + res.status);
+        }
+        return res.json();
+      })
+      .then(function(data){
+        if (!Array.isArray(data) || data.length === 0) throw new Error('ERROR: no commits found');
+        var messages = data.map(function(c){ return (c.commit && c.commit.message ? c.commit.message.split('\n')[0] : ''); });
+        var timestamps = data.map(function(c){ return c.commit && c.commit.author ? c.commit.author.date : null; });
+        var a = analyze(messages, timestamps);
+        renderResult(a, owner + '/' + repo);
+        el.status.textContent = 'OK: reviewed ' + messages.length + ' commits from ' + owner + '/' + repo;
+        el.status.classList.remove('err');
+      })
+      .catch(function(err){
+        el.status.textContent = err.message || 'ERROR: fetch failed';
+        el.status.classList.add('err');
+        el.result.classList.remove('show');
+      })
+      .finally(function(){
+        el.startBtn.disabled = false;
+      });
+  }
+
+  el.startBtn.addEventListener('click', function(){
+    if (mode === 'paste') runPaste();
+    else runRepo();
+  });
+
+  el.copyBtn.addEventListener('click', function(){
+    if (!lastText) return;
+    var doCopy = function(){
+      el.copiedMsg.classList.add('show');
+      setTimeout(function(){ el.copiedMsg.classList.remove('show'); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(lastText).then(doCopy);
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = lastText;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      doCopy();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
